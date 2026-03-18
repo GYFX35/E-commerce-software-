@@ -34,6 +34,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     const product = { title, price, url };
     sendResponse({ product });
+    return false; // Sync response
   }
-  return true;
+  return false; // No response for other actions
 });

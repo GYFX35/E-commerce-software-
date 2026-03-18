@@ -23,7 +23,29 @@ document.getElementById('analyze-btn').addEventListener('click', async () => {
         }
 
         if (analysis && analysis.recommendation) {
-          resultDiv.innerHTML = `<strong>Recommendation:</strong> ${analysis.recommendation}<br><br><strong>Market Insight:</strong> ${analysis.market_insight}`;
+          // Clear previous content
+          resultDiv.textContent = '';
+
+          // Create elements for Recommendation
+          const recTitle = document.createElement('strong');
+          recTitle.textContent = 'Recommendation: ';
+          const recText = document.createTextNode(analysis.recommendation);
+
+          const br1 = document.createElement('br');
+          const br2 = document.createElement('br');
+
+          // Create elements for Market Insight
+          const insightTitle = document.createElement('strong');
+          insightTitle.textContent = 'Market Insight: ';
+          const insightText = document.createTextNode(analysis.market_insight);
+
+          // Append everything
+          resultDiv.appendChild(recTitle);
+          resultDiv.appendChild(recText);
+          resultDiv.appendChild(br1);
+          resultDiv.appendChild(br2);
+          resultDiv.appendChild(insightTitle);
+          resultDiv.appendChild(insightText);
         } else {
           resultDiv.textContent = 'Analysis failed. Please try again.';
         }
