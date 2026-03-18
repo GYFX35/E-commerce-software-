@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Dropshipping Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; }
+        .sidebar { width: 250px; background: #2c3e50; color: white; min-height: 100vh; padding: 20px; }
+        .main-content { flex: 1; padding: 30px; background: #ecf0f1; }
+        h1 { color: #2c3e50; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .nav-item { margin-bottom: 15px; cursor: pointer; color: #bdc3c7; }
+        .nav-item:hover { color: white; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>GlobalDrop AI</h2>
+        <div class="nav-item">Dashboard</div>
+        <div class="nav-item">Product Sourcing</div>
+        <div class="nav-item">Market Trends</div>
+        <div class="nav-item">Settings</div>
+    </div>
+    <div class="main-content">
+        <h1>Global Dropshipping Dashboard</h1>
+        <div class="card">
+            <h3>Global Market Overview</h3>
+            <p>Your AI assistant is currently monitoring 5 platforms: Amazon, AliExpress, Shopify, WooCommerce, eBay.</p>
+            <p id="api-status">API Status: Checking...</p>
+            <p><strong>Recent Activity:</strong> 12 potential products discovered in the last 24 hours.</p>
+        </div>
+    </div>
+    <script>
+        async function checkApiStatus() {
+            const statusEl = document.getElementById('api-status');
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                statusEl.textContent = 'API Status: ' + data.status.toUpperCase();
+                statusEl.style.color = '#27ae60';
+            } catch (error) {
+                statusEl.textContent = 'API Status: OFFLINE';
+                statusEl.style.color = '#e74c3c';
+            }
+        }
+        window.onload = checkApiStatus;
+    </script>
+</body>
+</html>
