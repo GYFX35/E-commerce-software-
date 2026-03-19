@@ -2,3 +2,5 @@ fastapi
 uvicorn
 pydantic
 requests
+passlib
+bcrypt==4.0.1
