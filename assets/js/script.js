@@ -1,8 +1,12 @@
 // Simple Shopping Cart Logic for E-Commerce MVP
 
 document.addEventListener('DOMContentLoaded', () => {
+    const API_URL = 'http://localhost:8000';
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+
     updateCartUI();
+    updateAuthUI();
 
     // Add to Cart from products page or index
     document.querySelectorAll('.add-to-cart').forEach(button => {
@@ -50,6 +54,148 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = 'index.html';
             });
         }
+    }
+
+    // Login Form Logic
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('currentUser', JSON.stringify({ username: data.username }));
+                    alert('Login successful!');
+                    window.location.href = 'index.html';
+                } else {
+                    const error = await response.json();
+                    alert(`Login failed: ${error.detail}`);
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+                alert('An error occurred during login.');
+            }
+        });
+    }
+
+    // Register Form Logic
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                if (response.ok) {
+                    alert('Registration successful! Please login.');
+                    window.location.href = 'login.html';
+                } else {
+                    const error = await response.json();
+                    alert(`Registration failed: ${error.detail}`);
+                }
+            } catch (error) {
+                console.error('Error during registration:', error);
+                alert('An error occurred during registration.');
+            }
+        });
+    }
+
+    function updateAuthUI() {
+        const navLinks = document.querySelector('.navbar-nav');
+        if (!navLinks) return;
+
+        // Remove existing auth links
+        const existingAuthLinks = navLinks.querySelectorAll('.auth-link');
+        existingAuthLinks.forEach(link => link.remove());
+
+        if (currentUser) {
+            const logoutItem = document.createElement('li');
+            logoutItem.className = 'nav-item auth-link';
+            logoutItem.innerHTML = `<a class="nav-link" href="#" id="logout-btn">Logout (${currentUser.username})</a>`;
+            navLinks.appendChild(logoutItem);
+
+            const submitItem = document.createElement('li');
+            submitItem.className = 'nav-item auth-link';
+            submitItem.innerHTML = `<a class="nav-link" href="submit-product.html">Submit Product</a>`;
+            navLinks.appendChild(submitItem);
+
+            document.getElementById('logout-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('currentUser');
+                alert('You have been logged out.');
+                window.location.href = 'index.html';
+            });
+        } else {
+            const loginItem = document.createElement('li');
+            loginItem.className = 'nav-item auth-link';
+            loginItem.innerHTML = `<a class="nav-link" href="login.html">Login</a>`;
+            navLinks.appendChild(loginItem);
+
+            const registerItem = document.createElement('li');
+            registerItem.className = 'nav-item auth-link';
+            registerItem.innerHTML = `<a class="nav-link" href="register.html">Register</a>`;
+            navLinks.appendChild(registerItem);
+        }
+
+        // Add Podcast link if it doesn't exist
+        if (!navLinks.querySelector('a[href="podcasts.html"]')) {
+            const podcastItem = document.createElement('li');
+            podcastItem.className = 'nav-item';
+            podcastItem.innerHTML = `<a class="nav-link" href="podcasts.html">Podcasts</a>`;
+            navLinks.appendChild(podcastItem);
+        }
+    }
+
+    // Product Submission Form Logic
+    const submitProductForm = document.getElementById('submit-product-form');
+    if (submitProductForm) {
+        if (!currentUser) {
+            alert('Please login to submit a product.');
+            window.location.href = 'login.html';
+        }
+
+        submitProductForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('prod-title').value;
+            const price = document.getElementById('prod-price').value;
+            const description = document.getElementById('prod-desc').value;
+
+            try {
+                const response = await fetch(`${API_URL}/products`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, price, description })
+                });
+
+                if (response.ok) {
+                    alert('Product submitted successfully!');
+                    window.location.href = 'products.html';
+                } else {
+                    const error = await response.json();
+                    alert(`Submission failed: ${error.detail || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error during product submission:', error);
+                alert('An error occurred during submission.');
+            }
+        });
     }
 
     function addToCart(id, name, price, update = true) {
@@ -162,6 +308,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (totalEl) totalEl.textContent = `$${total.toFixed(2)}`;
+    }
+
+    // Podcast Page Logic
+    if (window.location.pathname.includes('podcasts.html')) {
+        renderPodcasts();
+    }
+
+    async function renderPodcasts() {
+        const podcastList = document.getElementById('podcast-list');
+        if (!podcastList) return;
+
+        try {
+            const response = await fetch(`${API_URL}/podcasts`);
+            const podcasts = await response.json();
+
+            podcastList.innerHTML = '';
+            podcasts.forEach(podcast => {
+                const col = document.createElement('div');
+                col.className = 'col-md-6 mb-4';
+                col.innerHTML = `
+                    <div class="card h-100 shadow-sm">
+                        <div class="row g-0">
+                            <div class="col-md-4">
+                                <img src="${podcast.thumbnail}" class="img-fluid rounded-start h-100" style="object-fit: cover;" alt="${podcast.title}">
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body">
+                                    <h5 class="card-title">${podcast.title}</h5>
+                                    <p class="card-text">${podcast.description}</p>
+                                    <audio controls class="w-100">
+                                        <source src="${podcast.audio_url}" type="audio/mpeg">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                podcastList.appendChild(col);
+            });
+        } catch (error) {
+            console.error('Error fetching podcasts:', error);
+            podcastList.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Failed to load podcasts. Make sure the API is running.</p></div>';
+        }
     }
 
     // Simple Product Detail Page Handler (MVP)
