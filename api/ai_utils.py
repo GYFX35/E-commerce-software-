@@ -21,6 +21,27 @@ class AIAssistant:
             "competition_level": "Medium"
         }
 
+    def generate_marketing_strategy(self, niche: str) -> Dict[str, Any]:
+        """Marketer Role: Generates a marketing strategy for a given niche."""
+        return {
+            "strategy_name": f"Global Reach for {niche}",
+            "channels": ["Instagram Ads", "TikTok Influencers", "Google Search"],
+            "target_audience": "Global e-commerce enthusiasts",
+            "key_message": f"Premium {niche} at your doorstep."
+        }
+
+    def handle_customer_query(self, query: str) -> str:
+        """Clients Assistant Role: Responds to customer inquiries."""
+        return f"Thank you for your query regarding '{query}'. Our support team will get back to you within 24 hours with a detailed resolution."
+
+    def optimize_sales_listing(self, product_details: Dict[str, Any]) -> Dict[str, Any]:
+        """Products Seller Assistant Role: Provides insights to optimize product listings."""
+        return {
+            "suggested_price_adjustment": "+5%",
+            "seo_keywords": ["high quality", "affordable", "fast shipping", "top rated"],
+            "image_optimization_tips": "Ensure high-resolution images with white backgrounds."
+        }
+
 # Example usage
 if __name__ == "__main__":
     ai = AIAssistant()
