@@ -4,3 +4,8 @@ pydantic
 requests
 passlib
 bcrypt==4.0.1
+langchain
+langchain-google-genai
+google-api-python-client
+langflow
+python-dotenv

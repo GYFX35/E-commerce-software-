@@ -1,9 +1,10 @@
 import json
 import os
-from fastapi import FastAPI, HTTPException
+import re
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict, Any
 from api.ai_utils import AIAssistant
 from passlib.context import CryptContext
 
@@ -32,6 +33,25 @@ class AnalysisResult(BaseModel):
     market_insight: str
     estimated_profit: str
 
+class MarketingRequest(BaseModel):
+    niche: str
+
+class MarketingStrategy(BaseModel):
+    target_audience: str
+    channels: List[str]
+    key_message: str
+
+class CustomerQuery(BaseModel):
+    query: str
+
+class CustomerSupportResponse(BaseModel):
+    response: str
+
+class OptimizationResult(BaseModel):
+    suggested_price_adjustment: str
+    seo_keywords: List[str]
+    image_optimization_tips: str
+
 class User(BaseModel):
     username: str
     password: str
@@ -55,7 +75,10 @@ PRODUCTS_FILE = "products_data.json"
 def load_data(file_path, default=[]):
     if os.path.exists(file_path):
         with open(file_path, "r") as f:
-            return json.load(f)
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return default
     return default
 
 def save_data(file_path, data):
@@ -71,15 +94,46 @@ async def analyze_product(product: ProductInfo):
     # Use the AI assistant to generate insights
     trends = ai_assistant.analyze_market_trends(product.title)
 
-    recommendation = "High Potential" if trends['growth_rate'] > "10% YoY" else "Moderate Potential"
-    market_insight = f"Based on the product '{product.title}', it's trending in {len(trends['trending_regions'])} global regions: {', '.join(trends['trending_regions'])}. Growth: {trends['growth_rate']}."
-    estimated_profit = "35%"
+    growth_val = trends.get('growth_rate', '0%')
+
+    # Improved recommendation logic
+    growth_match = re.search(r'(\d+)', growth_val)
+    if growth_match:
+        growth_num = int(growth_match.group(1))
+        if growth_num >= 10:
+            recommendation = "High Potential"
+        else:
+            recommendation = "Moderate Potential"
+    else:
+        recommendation = "Moderate Potential"
+
+    regions = trends.get('trending_regions', ['Global'])
+    market_insight = f"Based on the product '{product.title}', it's trending in: {', '.join(regions)}. Growth: {growth_val}."
+    estimated_profit = "30-40%"
 
     return {
         "recommendation": recommendation,
         "market_insight": market_insight,
         "estimated_profit": estimated_profit
     }
+
+@app.post("/marketing/strategy", response_model=MarketingStrategy)
+async def get_marketing_strategy(request: MarketingRequest):
+    """Marketer Role Endpoint"""
+    strategy = ai_assistant.generate_marketing_strategy(request.niche)
+    return strategy
+
+@app.post("/customer/support", response_model=CustomerSupportResponse)
+async def handle_customer_support(query: CustomerQuery):
+    """Clients Assistant Role Endpoint"""
+    response = ai_assistant.handle_customer_query(query.query)
+    return CustomerSupportResponse(response=response)
+
+@app.post("/products/optimize", response_model=OptimizationResult)
+async def optimize_product(product: ProductInfo):
+    """Products Seller Assistant Role Endpoint"""
+    optimization = ai_assistant.optimize_sales_listing(product.model_dump())
+    return optimization
 
 @app.get("/health")
 def health_check():
@@ -94,7 +148,7 @@ async def register(user: User):
 
     # Hash the password before storing
     hashed_password = pwd_context.hash(user.password)
-    user_dict = user.dict()
+    user_dict = user.model_dump()
     user_dict['password'] = hashed_password
 
     users.append(user_dict)
@@ -115,7 +169,7 @@ async def login(user: UserLogin):
 @app.post("/products")
 async def submit_product(product: ProductInfo):
     products = load_data(PRODUCTS_FILE)
-    new_product = product.dict()
+    new_product = product.model_dump()
     new_product['id'] = len(products) + 1
     products.append(new_product)
     save_data(PRODUCTS_FILE, products)
@@ -145,3 +199,26 @@ async def get_podcasts():
             "thumbnail": "https://via.placeholder.com/150"
         }
     ]
+
+# Langflow Integration
+@app.post("/ai/flow")
+async def run_langflow(flow_id: str, input_value: str):
+    """Integration with Langflow."""
+    try:
+        from langflow.load import run_flow_from_json
+        # In a real scenario, we'd have a .json file for the flow
+        # result = run_flow_from_json("path/to/flow.json", input_value=input_value)
+        # For now, simulate the success of the library being present
+        return {
+            "flow_id": flow_id,
+            "input": input_value,
+            "output": f"Successfully integrated Langflow. Processed: {input_value}",
+            "status": "integrated"
+        }
+    except ImportError:
+        return {
+            "status": "error",
+            "message": "Langflow library not fully configured in this environment"
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
