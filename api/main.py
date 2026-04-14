@@ -27,6 +27,20 @@ class ProductInfo(BaseModel):
     price: str
     description: Optional[str] = ""
 
+class MarketingStrategy(BaseModel):
+    strategy_name: str
+    channels: List[str]
+    target_audience: str
+    key_message: str
+
+class CustomerQuery(BaseModel):
+    query: str
+
+class SellerInsights(BaseModel):
+    suggested_price_adjustment: str
+    seo_keywords: List[str]
+    image_optimization_tips: str
+
 class AnalysisResult(BaseModel):
     recommendation: str
     market_insight: str
@@ -85,6 +99,22 @@ async def analyze_product(product: ProductInfo):
 def health_check():
     return {"status": "ok"}
 
+@app.post("/marketing/strategy", response_model=MarketingStrategy)
+async def get_marketing_strategy(niche: str):
+    """Marketer Role Endpoint"""
+    return ai_assistant.generate_marketing_strategy(niche)
+
+@app.post("/customer/support")
+async def handle_customer_support(query: CustomerQuery):
+    """Clients Assistant Role Endpoint"""
+    response = ai_assistant.handle_customer_query(query.query)
+    return {"response": response}
+
+@app.post("/seller/optimize", response_model=SellerInsights)
+async def get_seller_insights(product: ProductInfo):
+    """Products Seller Assistant Role Endpoint"""
+    return ai_assistant.optimize_sales_listing(product.model_dump())
+
 # Authentication Endpoints
 @app.post("/register")
 async def register(user: User):
@@ -94,7 +124,7 @@ async def register(user: User):
 
     # Hash the password before storing
     hashed_password = pwd_context.hash(user.password)
-    user_dict = user.dict()
+    user_dict = user.model_dump()
     user_dict['password'] = hashed_password
 
     users.append(user_dict)
@@ -115,7 +145,7 @@ async def login(user: UserLogin):
 @app.post("/products")
 async def submit_product(product: ProductInfo):
     products = load_data(PRODUCTS_FILE)
-    new_product = product.dict()
+    new_product = product.model_dump()
     new_product['id'] = len(products) + 1
     products.append(new_product)
     save_data(PRODUCTS_FILE, products)
