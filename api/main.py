@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
 from api.ai_utils import AIAssistant
+from api.marketing_ai import MarketingAI
+from api.news_service import NewsService
 from passlib.context import CryptContext
 
 app = FastAPI(title="Global Dropshipping AI API")
@@ -21,6 +23,8 @@ app.add_middleware(
 )
 
 ai_assistant = AIAssistant()
+marketing_ai = MarketingAI()
+news_service = NewsService()
 
 class ProductInfo(BaseModel):
     title: str
@@ -61,6 +65,21 @@ class Podcast(BaseModel):
     description: str
     audio_url: str
     thumbnail: str
+
+class AdRequest(BaseModel):
+    product_name: str
+    keywords: Optional[List[str]] = []
+    target_audience: Optional[str] = "Global"
+
+class PerformanceRequest(BaseModel):
+    platform: str
+
+class NewsItem(BaseModel):
+    id: int
+    title: str
+    summary: str
+    source: str
+    date: str
 
 # Data Persistence (Simple JSON files for MVP)
 USERS_FILE = "users.json"
@@ -175,3 +194,29 @@ async def get_podcasts():
             "thumbnail": "https://via.placeholder.com/150"
         }
     ]
+
+# Marketing and AI Data Science Endpoints
+@app.post("/marketing/google-ads")
+async def generate_google_ads(request: AdRequest):
+    return marketing_ai.generate_google_ads(request.product_name, request.keywords)
+
+@app.post("/marketing/facebook-ads")
+async def generate_facebook_ads(request: AdRequest):
+    return marketing_ai.generate_facebook_ads(request.product_name, request.target_audience)
+
+@app.post("/marketing/performance-prediction")
+async def predict_performance(request: PerformanceRequest):
+    return marketing_ai.predict_ad_performance(request.platform)
+
+@app.post("/marketing/audience-analysis")
+async def analyze_audience(niche: str):
+    return marketing_ai.analyze_audience_network(niche)
+
+# News Endpoints
+@app.get("/news", response_model=List[NewsItem])
+async def get_news():
+    return news_service.get_latest_news()
+
+@app.get("/news/{news_id}/summary")
+async def get_news_summary(news_id: int):
+    return {"summary": news_service.summarize_news(news_id)}
