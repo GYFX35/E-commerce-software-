@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing & Data Science Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; }
+        .sidebar { width: 250px; background: #2c3e50; color: white; min-height: 100vh; padding: 20px; }
+        .main-content { flex: 1; padding: 30px; background: #ecf0f1; }
+        .card { margin-bottom: 20px; }
+        .nav-item { margin-bottom: 15px; cursor: pointer; color: #bdc3c7; text-decoration: none; display: block; }
+        .nav-item:hover { color: white; }
+        .active { color: white; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>GlobalDrop AI</h2>
+        <a href="index.html" class="nav-item">Dashboard</a>
+        <a href="marketing_dashboard.html" class="nav-item active">Marketing & Ads</a>
+        <div class="nav-item">Product Sourcing</div>
+        <div class="nav-item">Market Trends</div>
+    </div>
+    <div class="main-content">
+        <h1>Marketing & Data Science Capacity</h1>
+
+        <div class="row">
+            <!-- Ads Generation -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fab fa-google"></i> Google Ads Generator
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Product Name</label>
+                            <input type="text" id="google-product" class="form-control" placeholder="e.g. Wireless Earbuds">
+                        </div>
+                        <button onclick="generateGoogleAds()" class="btn btn-primary">Generate Ads</button>
+                        <div id="google-ads-result" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <i class="fab fa-facebook"></i> Facebook Audience Networking
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Target Audience/Niche</label>
+                            <input type="text" id="fb-niche" class="form-control" placeholder="e.g. Fitness Enthusiasts">
+                        </div>
+                        <button onclick="analyzeAudience()" class="btn btn-info text-white">Analyze Network</button>
+                        <div id="audience-result" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- News Section -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fas fa-newspaper"></i> Latest E-commerce News
+                    </div>
+                    <div class="card-body">
+                        <div id="news-list" class="list-group">
+                            <!-- News items will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Prediction -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-chart-line"></i> Performance Prediction
+                    </div>
+                    <div class="card-body">
+                        <select id="platform-select" class="form-select mb-3">
+                            <option value="Google Ads">Google Ads</option>
+                            <option value="Facebook Ads">Facebook Ads</option>
+                            <option value="TikTok Ads">TikTok Ads</option>
+                        </select>
+                        <button onclick="predictPerformance()" class="btn btn-success">Predict CTR/CPC</button>
+                        <div id="performance-result" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        async function generateGoogleAds() {
+            const product = document.getElementById('google-product').value;
+            const resultDiv = document.getElementById('google-ads-result');
+            resultDiv.innerHTML = 'Generating...';
+
+            try {
+                const response = await fetch(`${API_BASE}/marketing/google-ads`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ product_name: product, keywords: ['premium', 'fast shipping'] })
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <div class="alert alert-secondary">
+                        <strong>Headline 1:</strong> ${data.headline_1}<br>
+                        <strong>Headline 2:</strong> ${data.headline_2}<br>
+                        <strong>Description:</strong> ${data.description_1}
+                    </div>
+                `;
+            } catch (e) { resultDiv.innerHTML = 'Error generating ads.'; }
+        }
+
+        async function analyzeAudience() {
+            const niche = document.getElementById('fb-niche').value;
+            const resultDiv = document.getElementById('audience-result');
+            resultDiv.innerHTML = 'Analyzing...';
+
+            try {
+                const response = await fetch(`${API_BASE}/marketing/audience-analysis?niche=${niche}`, { method: 'POST' });
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <div class="alert alert-light border">
+                        <p><strong>Audience Size:</strong> ${data.audience_size}</p>
+                        <p><strong>Engagement:</strong> ${data.engagement_rate}</p>
+                        <ul>${data.networking_tips.map(tip => `<li>${tip}</li>`).join('')}</ul>
+                    </div>
+                `;
+            } catch (e) { resultDiv.innerHTML = 'Error analyzing audience.'; }
+        }
+
+        async function predictPerformance() {
+            const platform = document.getElementById('platform-select').value;
+            const resultDiv = document.getElementById('performance-result');
+            resultDiv.innerHTML = 'Calculating...';
+
+            try {
+                const response = await fetch(`${API_BASE}/marketing/performance-prediction`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ platform: platform })
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <div class="card border-success">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">${data.platform}</h5>
+                            <p class="card-text">Est. CTR: ${data.estimated_ctr}</p>
+                            <p class="card-text">Est. CPC: ${data.estimated_cpc}</p>
+                            <span class="badge bg-success">Probability: ${data.conversion_probability}</span>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { resultDiv.innerHTML = 'Error predicting performance.'; }
+        }
+
+        async function loadNews() {
+            const newsList = document.getElementById('news-list');
+            try {
+                const response = await fetch(`${API_BASE}/news`);
+                const news = await response.json();
+                newsList.innerHTML = news.map(item => `
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">${item.title}</h5>
+                            <small>${item.date}</small>
+                        </div>
+                        <p class="mb-1">${item.summary}</p>
+                        <small class="text-muted">Source: ${item.source}</small>
+                    </div>
+                `).join('');
+            } catch (e) { newsList.innerHTML = 'Error loading news.'; }
+        }
+
+        window.onload = loadNews;
+    </script>
+</body>
+</html>
