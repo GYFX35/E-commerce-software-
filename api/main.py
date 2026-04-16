@@ -7,6 +7,7 @@ from typing import Optional, List
 from api.ai_utils import AIAssistant
 from api.marketing_ai import MarketingAI
 from api.news_service import NewsService
+from api.pos_service import POSService
 from passlib.context import CryptContext
 
 app = FastAPI(title="Global Dropshipping AI API")
@@ -25,6 +26,7 @@ app.add_middleware(
 ai_assistant = AIAssistant()
 marketing_ai = MarketingAI()
 news_service = NewsService()
+pos_service = POSService()
 
 class ProductInfo(BaseModel):
     title: str
@@ -80,6 +82,23 @@ class NewsItem(BaseModel):
     summary: str
     source: str
     date: str
+
+class POSConnectRequest(BaseModel):
+    provider: str
+    api_key: str
+    merchant_id: Optional[str] = None
+
+class POSSyncResponse(BaseModel):
+    status: str
+    provider: str
+    items_synced: int
+    timestamp: str
+
+class POSStatusResponse(BaseModel):
+    provider: str
+    connected: bool
+    status: str
+    last_sync: Optional[str] = None
 
 # Data Persistence (Simple JSON files for MVP)
 USERS_FILE = "users.json"
@@ -220,3 +239,29 @@ async def get_news():
 @app.get("/news/{news_id}/summary")
 async def get_news_summary(news_id: int):
     return {"summary": news_service.summarize_news(news_id)}
+
+# POS Integration Endpoints
+@app.post("/pos/connect")
+async def connect_pos(request: POSConnectRequest):
+    result = pos_service.connect(request.provider, {"api_key": request.api_key, "merchant_id": request.merchant_id})
+    if result["status"] == "error":
+        raise HTTPException(status_code=400, detail=result["message"])
+    return result
+
+@app.post("/pos/sync/{provider}", response_model=POSSyncResponse)
+async def sync_pos_inventory(provider: str):
+    result = pos_service.sync_inventory(provider)
+    if result["status"] == "error":
+        raise HTTPException(status_code=404, detail=result["message"])
+    return result
+
+@app.get("/pos/status", response_model=List[POSStatusResponse])
+async def get_pos_status():
+    return pos_service.get_all_connections()
+
+@app.get("/pos/sales/{provider}")
+async def get_pos_sales(provider: str):
+    result = pos_service.get_sales_data(provider)
+    if "status" in result and result["status"] == "error":
+        raise HTTPException(status_code=404, detail=result["message"])
+    return result
