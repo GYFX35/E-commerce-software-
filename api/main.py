@@ -1,13 +1,15 @@
 import json
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
 from api.ai_utils import AIAssistant
 from api.marketing_ai import MarketingAI
 from api.news_service import NewsService
 from api.pos_service import POSService
+from api.security_service import SecurityService
 from passlib.context import CryptContext
 
 app = FastAPI(title="Global Dropshipping AI API")
@@ -15,18 +17,40 @@ app = FastAPI(title="Global Dropshipping AI API")
 # Password hashing configuration
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# Security Note: allow_origins=["*"] is used for development flexibility.
+# In a production environment, this MUST be restricted to the specific frontend domain(s).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        # Allow self and CDNs used in the project
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "font-src 'self' https://cdnjs.cloudflare.com; "
+            "img-src 'self' data: https://via.placeholder.com;"
+        )
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 ai_assistant = AIAssistant()
 marketing_ai = MarketingAI()
 news_service = NewsService()
 pos_service = POSService()
+security_service = SecurityService()
 
 class ProductInfo(BaseModel):
     title: str
@@ -99,6 +123,12 @@ class POSStatusResponse(BaseModel):
     connected: bool
     status: str
     last_sync: Optional[str] = None
+
+class SecurityScanRequest(BaseModel):
+    url: str
+
+class SupplierVerifyRequest(BaseModel):
+    supplier_name: str
 
 # Data Persistence (Simple JSON files for MVP)
 USERS_FILE = "users.json"
@@ -265,3 +295,20 @@ async def get_pos_sales(provider: str):
     if "status" in result and result["status"] == "error":
         raise HTTPException(status_code=404, detail=result["message"])
     return result
+
+# Security Endpoints
+@app.post("/security/scan")
+async def scan_product_security(request: SecurityScanRequest):
+    return security_service.scan_product(request.url)
+
+@app.post("/security/verify-supplier")
+async def verify_supplier_security(request: SupplierVerifyRequest):
+    return security_service.verify_supplier(request.supplier_name)
+
+@app.get("/security/audit")
+async def run_store_security_audit():
+    return security_service.run_store_audit()
+
+@app.post("/security/ai-review")
+async def get_ai_security_review(context: str):
+    return ai_assistant.conduct_security_review(context)
