@@ -30,9 +30,9 @@
     <div class="main-content">
         <h1>Marketing & Data Science Capacity</h1>
 
+        <!-- Ad Creation Tools -->
         <div class="row">
-            <!-- Ads Generation -->
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
                         <i class="fab fa-google"></i> Google Ads Generator
@@ -42,13 +42,13 @@
                             <label class="form-label">Product Name</label>
                             <input type="text" id="google-product" class="form-control" placeholder="e.g. Wireless Earbuds">
                         </div>
-                        <button onclick="generateGoogleAds()" class="btn btn-primary">Generate Ads</button>
+                        <button onclick="generateGoogleAds()" class="btn btn-primary w-100">Generate Ads</button>
                         <div id="google-ads-result" class="mt-3"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="card">
                     <div class="card-header bg-info text-white">
                         <i class="fab fa-facebook"></i> Facebook Audience Networking
@@ -58,8 +58,73 @@
                             <label class="form-label">Target Audience/Niche</label>
                             <input type="text" id="fb-niche" class="form-control" placeholder="e.g. Fitness Enthusiasts">
                         </div>
-                        <button onclick="analyzeAudience()" class="btn btn-info text-white">Analyze Network</button>
+                        <button onclick="analyzeAudience()" class="btn btn-info text-white w-100">Analyze Network</button>
                         <div id="audience-result" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fab fa-tiktok"></i> TikTok Ad Script Generator
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Product Name</label>
+                            <input type="text" id="tiktok-product" class="form-control" placeholder="e.g. Yoga Mat">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Niche</label>
+                            <input type="text" id="tiktok-niche" class="form-control" placeholder="e.g. Fitness">
+                        </div>
+                        <button onclick="generateTikTokAds()" class="btn btn-dark w-100">Generate Script</button>
+                        <div id="tiktok-ads-result" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Catalogs and Campaigns -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <i class="fas fa-folder-open"></i> Product Catalogs
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <input type="text" id="catalog-name" class="form-control" placeholder="Catalog Name">
+                            <button onclick="createCatalog()" class="btn btn-outline-secondary">Create</button>
+                        </div>
+                        <ul id="catalog-list" class="list-group">
+                            <!-- Catalogs will be loaded here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="fas fa-bullhorn"></i> Marketing Campaigns
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <input type="text" id="campaign-name" class="form-control mb-2" placeholder="Campaign Name">
+                            <select id="campaign-catalog" class="form-select mb-2">
+                                <option value="">Select Catalog</option>
+                            </select>
+                            <select id="campaign-platform" class="form-select mb-2">
+                                <option value="TikTok">TikTok</option>
+                                <option value="Facebook">Facebook</option>
+                                <option value="Google">Google</option>
+                            </select>
+                            <button onclick="createCampaign()" class="btn btn-warning w-100">Launch Campaign</button>
+                        </div>
+                        <div id="campaign-list">
+                            <!-- Campaigns will be loaded here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -92,7 +157,7 @@
                             <option value="Facebook Ads">Facebook Ads</option>
                             <option value="TikTok Ads">TikTok Ads</option>
                         </select>
-                        <button onclick="predictPerformance()" class="btn btn-success">Predict CTR/CPC</button>
+                        <button onclick="predictPerformance()" class="btn btn-success w-100">Predict CTR/CPC</button>
                         <div id="performance-result" class="mt-3"></div>
                     </div>
                 </div>
@@ -123,6 +188,29 @@
                     </div>
                 `;
             } catch (e) { resultDiv.innerHTML = 'Error generating ads.'; }
+        }
+
+        async function generateTikTokAds() {
+            const product = document.getElementById('tiktok-product').value;
+            const niche = document.getElementById('tiktok-niche').value;
+            const resultDiv = document.getElementById('tiktok-ads-result');
+            resultDiv.innerHTML = 'Generating...';
+
+            try {
+                const response = await fetch(`${API_BASE}/marketing/tiktok-ads`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ product_name: product, niche: niche })
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <div class="alert alert-dark">
+                        <strong>Hook:</strong> ${data.hook}<br>
+                        <strong>Body:</strong> ${data.body}<br>
+                        <strong>Tags:</strong> ${data.hashtags.join(' ')}
+                    </div>
+                `;
+            } catch (e) { resultDiv.innerHTML = 'Error generating TikTok script.'; }
         }
 
         async function analyzeAudience() {
@@ -168,6 +256,62 @@
             } catch (e) { resultDiv.innerHTML = 'Error predicting performance.'; }
         }
 
+        async function createCatalog() {
+            const name = document.getElementById('catalog-name').value;
+            if (!name) return;
+            try {
+                await fetch(`${API_BASE}/marketing/catalogs`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id: 0, name: name, description: "New Catalog", product_ids: [] })
+                });
+                loadCatalogs();
+            } catch (e) { console.error("Error creating catalog"); }
+        }
+
+        async function loadCatalogs() {
+            const list = document.getElementById('catalog-list');
+            const select = document.getElementById('campaign-catalog');
+            try {
+                const response = await fetch(`${API_BASE}/marketing/catalogs`);
+                const catalogs = await response.json();
+                list.innerHTML = catalogs.map(c => `<li class="list-group-item d-flex justify-content-between align-items-center">${c.name} <span class="badge bg-primary rounded-pill">${c.product_ids.length} products</span></li>`).join('');
+                select.innerHTML = '<option value="">Select Catalog</option>' + catalogs.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            } catch (e) { list.innerHTML = 'Error loading catalogs.'; }
+        }
+
+        async function createCampaign() {
+            const name = document.getElementById('campaign-name').value;
+            const catalogId = document.getElementById('campaign-catalog').value;
+            const platform = document.getElementById('campaign-platform').value;
+            if (!name || !catalogId) return;
+            try {
+                await fetch(`${API_BASE}/marketing/campaigns`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id: 0, name: name, catalog_id: parseInt(catalogId), platform: platform, budget: 100, status: 'Active' })
+                });
+                loadCampaigns();
+            } catch (e) { console.error("Error creating campaign"); }
+        }
+
+        async function loadCampaigns() {
+            const div = document.getElementById('campaign-list');
+            try {
+                const response = await fetch(`${API_BASE}/marketing/campaigns`);
+                const campaigns = await response.json();
+                div.innerHTML = campaigns.map(c => `
+                    <div class="alert alert-info py-2 mb-2">
+                        <div class="d-flex justify-content-between">
+                            <strong>${c.name}</strong>
+                            <span class="badge bg-success">${c.status}</span>
+                        </div>
+                        <small>${c.platform} | Budget: $${c.budget}</small>
+                    </div>
+                `).join('');
+            } catch (e) { div.innerHTML = 'Error loading campaigns.'; }
+        }
+
         async function loadNews() {
             const newsList = document.getElementById('news-list');
             try {
@@ -186,7 +330,11 @@
             } catch (e) { newsList.innerHTML = 'Error loading news.'; }
         }
 
-        window.onload = loadNews;
+        window.onload = () => {
+            loadNews();
+            loadCatalogs();
+            loadCampaigns();
+        };
     </script>
 </body>
 </html>

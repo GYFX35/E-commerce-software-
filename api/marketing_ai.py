@@ -51,3 +51,14 @@ class MarketingAI:
                 "Run retargeting ads on Facebook Audience Network"
             ]
         }
+
+    def generate_tiktok_ads(self, product_name: str, niche: str, duration: int = 15) -> Dict[str, Any]:
+        """Generates TikTok ad concepts and scripts."""
+        return {
+            "ad_title": f"Viral {product_name} Trend",
+            "hook": f"You won't believe how this {product_name} changed my life! 😱",
+            "body": f"The ultimate solution for {niche} lovers. Grab yours now before it's gone!",
+            "music_recommendation": "Trending Lo-fi or Upbeat Pop",
+            "video_duration": f"{duration}s",
+            "hashtags": ["#tiktokmadebuyit", f"#{niche.replace(' ', '')}", "#dropshipping", "#musthave"]
+        }
