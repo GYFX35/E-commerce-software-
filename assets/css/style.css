@@ -87,3 +87,23 @@ footer {
         height: 150px;
     }
 }
+
+/* Social Sharing */
+#share-facebook:hover {
+    background-color: #3b5998;
+    color: white;
+}
+
+#share-twitter:hover {
+    background-color: #1da1f2;
+    color: white;
+}
+
+#share-linkedin:hover {
+    background-color: #0077b5;
+    color: white;
+}
+
+.d-flex.gap-2 .btn {
+    transition: all 0.2s ease-in-out;
+}

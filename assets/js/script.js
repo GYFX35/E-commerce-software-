@@ -371,6 +371,42 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('product-name').textContent = products[productId].name;
             document.getElementById('product-price').textContent = products[productId].price;
             document.getElementById('product-description').textContent = products[productId].desc;
+
+            setupSocialSharing(products[productId].name, products[productId].desc);
         }
+    }
+
+    function setupSocialSharing(name, description) {
+        const shareData = {
+            title: name,
+            text: description,
+            url: window.location.href
+        };
+
+        const shareBtn = document.getElementById('share-native');
+        const facebookBtn = document.getElementById('share-facebook');
+        const twitterBtn = document.getElementById('share-twitter');
+        const linkedinBtn = document.getElementById('share-linkedin');
+
+        if (shareBtn) {
+            if (navigator.share) {
+                shareBtn.addEventListener('click', async () => {
+                    try {
+                        await navigator.share(shareData);
+                    } catch (err) {
+                        console.error('Error sharing:', err);
+                    }
+                });
+            } else {
+                shareBtn.style.display = 'none';
+            }
+        }
+
+        const encodedUrl = encodeURIComponent(window.location.href);
+        const encodedText = encodeURIComponent(`${name} - ${description}`);
+
+        if (facebookBtn) facebookBtn.href = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+        if (twitterBtn) twitterBtn.href = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`;
+        if (linkedinBtn) linkedinBtn.href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
     }
 });
