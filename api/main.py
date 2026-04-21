@@ -11,6 +11,8 @@ from api.news_service import NewsService
 from api.pos_service import POSService
 from api.security_service import SecurityService
 from api.media_logistics_service import MediaLogisticsService
+from api.campaign_service import CampaignService
+from api.marketing_models import Catalog, Campaign, TikTokAdRequest
 from passlib.context import CryptContext
 
 app = FastAPI(title="Global Dropshipping AI API")
@@ -54,6 +56,7 @@ news_service = NewsService()
 pos_service = POSService()
 security_service = SecurityService()
 media_logistics_service = MediaLogisticsService()
+campaign_service = CampaignService()
 
 class ProductInfo(BaseModel):
     title: str
@@ -266,6 +269,26 @@ async def predict_performance(request: PerformanceRequest):
 @app.post("/marketing/audience-analysis")
 async def analyze_audience(niche: str):
     return marketing_ai.analyze_audience_network(niche)
+
+@app.post("/marketing/tiktok-ads")
+async def generate_tiktok_ads(request: TikTokAdRequest):
+    return marketing_ai.generate_tiktok_ads(request.product_name, request.niche, request.video_duration)
+
+@app.get("/marketing/catalogs", response_model=List[Catalog])
+async def get_catalogs():
+    return campaign_service.get_all_catalogs()
+
+@app.post("/marketing/catalogs", response_model=Catalog)
+async def create_catalog(catalog: Catalog):
+    return campaign_service.create_catalog(catalog.model_dump())
+
+@app.get("/marketing/campaigns", response_model=List[Campaign])
+async def get_campaigns():
+    return campaign_service.get_all_campaigns()
+
+@app.post("/marketing/campaigns", response_model=Campaign)
+async def create_campaign(campaign: Campaign):
+    return campaign_service.create_campaign(campaign.model_dump())
 
 # News Endpoints
 @app.get("/news", response_model=List[NewsItem])
