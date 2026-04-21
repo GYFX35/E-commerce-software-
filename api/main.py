@@ -10,6 +10,7 @@ from api.marketing_ai import MarketingAI
 from api.news_service import NewsService
 from api.pos_service import POSService
 from api.security_service import SecurityService
+from api.media_logistics_service import MediaLogisticsService
 from passlib.context import CryptContext
 
 app = FastAPI(title="Global Dropshipping AI API")
@@ -35,12 +36,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         # Allow self and CDNs used in the project
+        # Leaflet requires tile images from openstreetmap and unpkg
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; "
             "font-src 'self' https://cdnjs.cloudflare.com; "
-            "img-src 'self' data: https://via.placeholder.com;"
+            "img-src 'self' data: https://via.placeholder.com https://*.tile.openstreetmap.org https://unpkg.com;"
         )
         return response
 
@@ -51,6 +53,7 @@ marketing_ai = MarketingAI()
 news_service = NewsService()
 pos_service = POSService()
 security_service = SecurityService()
+media_logistics_service = MediaLogisticsService()
 
 class ProductInfo(BaseModel):
     title: str
@@ -129,6 +132,9 @@ class SecurityScanRequest(BaseModel):
 
 class SupplierVerifyRequest(BaseModel):
     supplier_name: str
+
+class ImageCapture(BaseModel):
+    image_data: str  # base64 encoded image
 
 # Data Persistence (Simple JSON files for MVP)
 USERS_FILE = "users.json"
@@ -312,3 +318,12 @@ async def run_store_security_audit():
 @app.post("/security/ai-review")
 async def get_ai_security_review(context: str):
     return ai_assistant.conduct_security_review(context)
+
+# Media & Logistics Endpoints
+@app.get("/logistics/shipments")
+async def get_shipments():
+    return media_logistics_service.get_shipments()
+
+@app.post("/media/analyze-image")
+async def analyze_captured_image(capture: ImageCapture):
+    return media_logistics_service.analyze_image_content(capture.image_data)
